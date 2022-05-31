@@ -102,7 +102,7 @@ def chars_to_labelled_samples(text: str, char_to_idx: dict, seq_len: int, device
     seq_len chars represented as indices. The label is constructed such that
     the label of each char is the next char in the original sequence.
     :param text: The char sequence to split.
-    :param char_to_idx: The mapping to create and embedding with.
+    :param char_to_idx: The mapping to create an embedding with.
     :param seq_len: The sequence length of each sample and label.
     :param device: The device on which to create the result tensors.
     :return: A tuple containing two tensors:
@@ -118,7 +118,8 @@ def chars_to_labelled_samples(text: str, char_to_idx: dict, seq_len: int, device
     #  3. Create the labels tensor in a similar way and convert to indices.
     #  Note that no explicit loops are required to implement this function.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    text_tensor = chars_to_onehot(text, char_to_idx)
+    samples = text_tensor[:seq_len + torch.arange(len(text) - 1)]
     # ========================
     return samples, labels
 
