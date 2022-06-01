@@ -68,9 +68,14 @@ def chars_to_onehot(text: str, char_to_idx: dict) -> Tensor:
     """
     # TODO: Implement the embedding.
     # ====== YOUR CODE: ======
-    result = torch.zeros(len(text), len(char_to_idx), dtype=torch.int8)
-    for i, char in enumerate(text):
-        result[i, char_to_idx[char]] = 1
+    import numpy as np
+    hot_inds = np.vectorize(char_to_idx.get)(list(text))
+    result = torch.zeros(len(text), len(char_to_idx), dtype=torch.int8)    
+    result[range(len(text)), hot_inds] = 1
+    # result = torch.tensor(result, dtype=torch.int8)    
+
+    # for i, char in enumerate(text):
+    #     result[i, char_to_idx[char]] = 1
     # ========================
     return result
 
@@ -87,9 +92,17 @@ def onehot_to_chars(embedded_text: Tensor, idx_to_char: dict) -> str:
     """
     # TODO: Implement the reverse-embedding.
     # ====== YOUR CODE: ======
+    import numpy as np
+    # np_embedded_text = embedded_text.detach.numpy()
+    embedded_inds = torch.argmax(embedded_text, dim = 1)
+    result_arr = np.vectorize(idx_to_char.get)(embedded_inds)
     result = ''
-    for r in range(embedded_text.shape[0]):
-        result += idx_to_char[embedded_text[r].argmax().item()]
+    result = result.join(result_arr)
+    
+    #naive implementation to test vectorized implementation
+    # result = ''
+    # for r in range(embedded_text.shape[0]):
+    #     result += idx_to_char[embedded_text[r].argmax().item()]
     # ========================
     return result
 
@@ -118,8 +131,21 @@ def chars_to_labelled_samples(text: str, char_to_idx: dict, seq_len: int, device
     #  3. Create the labels tensor in a similar way and convert to indices.
     #  Note that no explicit loops are required to implement this function.
     # ====== YOUR CODE: ======
-    text_tensor = chars_to_onehot(text, char_to_idx)
-    samples = text_tensor[:seq_len + torch.arange(len(text) - 1)]
+    # import pandas as pd
+    # def rolling_window(a, window):
+    #     shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
+    #     strides = a.strides + (a.strides[-1],)
+    #     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
+    import numpy as np
+    from numpy.lib.stride_tricks import sliding_window_view
+
+    text_np = chars_to_onehot(text, char_to_idx).detach().numpy()
+    samples_np = sliding_window_view(text_np, seq_len, axis=0).transpose(0,2,1)
+    samples = torch.from_numpy(samples_np)
+
+    labels=3
+    # samples = text_tensor[seq_len + list(np.arange(len(text) - 1))]
+    # labels = 0
     # ========================
     return samples, labels
 
