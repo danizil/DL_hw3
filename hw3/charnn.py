@@ -131,21 +131,42 @@ def chars_to_labelled_samples(text: str, char_to_idx: dict, seq_len: int, device
     #  3. Create the labels tensor in a similar way and convert to indices.
     #  Note that no explicit loops are required to implement this function.
     # ====== YOUR CODE: ======
-    # import pandas as pd
-    # def rolling_window(a, window):
-    #     shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
-    #     strides = a.strides + (a.strides[-1],)
-    #     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
-    import numpy as np
-    from numpy.lib.stride_tricks import sliding_window_view
+    train_onehot = chars_to_onehot(text[:-1], char_to_idx)
+    samples_tup = torch.split(train_onehot, seq_len, dim=0)
+    target_onehot_inds = torch.argmax(chars_to_onehot(text[1:], char_to_idx), dim=1)
+    labels_tup = torch.split(target_onehot_inds, seq_len, dim=0)
+    
+    if len(samples_tup[-1]) != len(samples_tup[0]):
+        samples_tup = samples_tup[:-1]
+        labels_tup = labels_tup[:-1]
 
-    text_np = chars_to_onehot(text, char_to_idx).detach().numpy()
-    samples_np = sliding_window_view(text_np, seq_len, axis=0).transpose(0,2,1)
-    samples = torch.from_numpy(samples_np)
+    samples = torch.stack(samples_tup, dim=0)
+    labels = torch.stack(labels_tup, dim=0)
+    
+    
+    # THIS NEXT PIECE OF CODE WAS A LONG ASS JOURNY BECAUSE I DIDN'T UNDERSTAND THE ASSIGNMENT AND I'M KEEPING
+    # IT FOR IF I NEED TO MAKE OVERLAPPING SEQUENCES
+    # import numpy as np
+    # from numpy.lib.stride_tricks import sliding_window_view
 
-    labels=3
-    # samples = text_tensor[seq_len + list(np.arange(len(text) - 1))]
-    # labels = 0
+    # # turn the text into big 1hot array
+    # text_np = chars_to_onehot(text, char_to_idx).detach().numpy()
+    # inds_np = np.argmax(text_np, axis = 1)
+    # # make into overlapping sub-sequences of seq_len
+    # samples_np = sliding_window_view(text_np, seq_len, axis=0).transpose(0,2,1)
+    # inds_np = sliding_window_view(inds_np, seq_len, axis=0)
+    # # convert to tensors
+    # # all_samples = torch.from_numpy(np.copy(samples_np[:-1, :, :]))
+    # # all_inds = torch.from_numpy(np.copy(inds_np[1:,:]), axis = 2)
+    # all_samples = samples_np
+    # all_inds = inds_np
+
+    # # samples are the first N-1 sequences, labels are the last
+    # samples = all_samples[:-1, :, :]
+    # labels = all_inds[1:, :]
+    # samples = torch.from_numpy(np.copy(samples)).to(device)
+    # labels = torch.from_numpy(np.copy(labels)).to(device)
+
     # ========================
     return samples, labels
 
