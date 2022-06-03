@@ -82,7 +82,18 @@ class Trainer(abc.ABC):
             #  - Use the train/test_epoch methods.
             #  - Save losses and accuracies in the lists above.
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            actual_num_epochs += 1
+
+            train_result = self.train_epoch(dl_train, verbose=verbose, **kw)
+            # don't know whethe to take the last loss or some average of the epoch
+            avg_loss_epoch = train_result.losses.mean()
+            train_loss.append(avg_loss_epoch.item())
+            train_acc.append(train_result.accuracy.item())
+
+            test_result = self.test_epoch(dl_test, verbose=verbose, **kw)
+            # don't think that the test result has many losses. think it's only got 1
+            test_loss.append(test_result.losses.item())
+            test_acc.append(test_result.accuracy.item())
             # ========================
 
             # TODO:
@@ -93,15 +104,25 @@ class Trainer(abc.ABC):
             #    the checkpoints argument.
             if best_acc is None or test_result.accuracy > best_acc:
                 # ====== YOUR CODE: ======
-                raise NotImplementedError()
+                # update the best accuracy 
+                # save checkpoint if asked
+                if checkpoints:
+                    self.save_checkpoint(checkpoints)
+
+                best_acc = test_result.accuracy
+                epochs_without_improvement = 0
                 # ========================
             else:
                 # ====== YOUR CODE: ======
-                raise NotImplementedError()
+                # best acc has not improved. number of epochs without improvement increases
+                epochs_without_improvement += 1
                 # ========================
-
             if post_epoch_fn:
                 post_epoch_fn(epoch, train_result, test_result, verbose)
+            
+            if early_stopping is not None and epochs_without_improvement >= early_stopping:
+                print(f"\nStopping at {epoch=} due to no improvement in {epochs_without_improvement} epochs.")
+                break
 
         return FitResult(actual_num_epochs, train_loss, train_acc, test_loss, test_acc)
 
@@ -225,7 +246,9 @@ class Trainer(abc.ABC):
 class RNNTrainer(Trainer):
     def __init__(self, model, loss_fn, optimizer, device=None):
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        super().__init__(model, device)
+        self.optimizer = optimizer
+        self.loss_fn = loss_fn
         # ========================
 
     def train_epoch(self, dl_train: DataLoader, **kw):

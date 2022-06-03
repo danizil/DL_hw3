@@ -304,7 +304,51 @@ class MultilayerGRU(nn.Module):
         #      then call self.register_parameter() on them. Also make
         #      sure to initialize them. See functions in torch.nn.init.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        
+        # initialize first layer from input dimension to hidden dimension
+        #=================================================================
+        z_1st_layer = [nn.Linear(in_dim + h_dim, h_dim, bias=True), nn.Sigmoid()]
+        self.add_module('z_0', z_1st_layer[0])
+        r_1st_layer = [nn.Linear(in_dim + h_dim, h_dim, bias=True), nn.Sigmoid()]
+        self.add_module('r_0', r_1st_layer[0])
+        # TODO: pitfall - do all parameters update? did i add module correctly?
+        g_1st_layer = [nn.Linear(in_dim + h_dim, h_dim, bias=True), nn.Tanh()]
+        self.add_module('g_0',g_1st_layer[0])
+
+        # TODO: test with dropout = 0
+        dropout_1st = nn.Dropout(dropout)
+        # TODO: do i really need to self.add_module?
+        self.add_module('dropout_0',dropout_1st)
+        first_layer_params = [z_1st_layer, r_1st_layer, g_1st_layer, dropout_1st]
+        self.layer_params.append(first_layer_params)
+        #===============================
+        # END initialize first layer END
+
+        # construct the rest of the layers
+        #=================================
+        for i in range(1, n_layers):
+            # TODO: does the number of layers include the first layer?
+            z_layer = [nn.Linear(h_dim + h_dim, h_dim, bias=True), nn.Sigmoid()]
+            self.add_module(f'z_{i}', z_layer[0])
+            r_layer = [nn.Linear(h_dim + h_dim, h_dim, bias=True), nn.Sigmoid()]
+            self.add_module(f'r_{i}', r_layer[0])
+            g_layer = [nn.Linear(h_dim + h_dim, h_dim, bias=True), nn.Tanh()]
+            self.add_module(f'g_{i}', g_layer[0])
+            dropout_layer = nn.Dropout(dropout)
+            self.add_module(f'dropout_{i}', dropout_layer)
+            layer_params = [z_layer, r_layer, g_layer, dropout_layer]
+            self.layer_params.append(layer_params)
+        #==================================
+        # END construct the rest of the layers END
+
+        # construct the final linear layer
+        #==================================
+        out_layer = nn.Linear(h_dim, out_dim, bias=True)
+        self.add_module('out_layer', out_layer)
+        self.layer_params.append(out_layer)
+        #==================================
+        # END construct the final linear layer END
+        
         # ========================
 
     def forward(self, input: Tensor, hidden_state: Tensor = None):
@@ -342,6 +386,13 @@ class MultilayerGRU(nn.Module):
         #  Tip: You can use torch.stack() to combine multiple tensors into a
         #  single tensor in a differentiable manner.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        # x = layer_input
+        # h = torch.zeros()
+        # for i in range(self.n_layers):
+        #     z_output = self.layer_params[i][0][1](self.layer_params[i][0][0](x))
+        #     r_layer = self.layer_params[i][0]
+        #     g_layer = self.layer_params[i][0]
+        #     dropout_layer = self.layer_params[i][3]
+
         # ========================
         return layer_output, hidden_state
