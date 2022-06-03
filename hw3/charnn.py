@@ -309,11 +309,14 @@ class MultilayerGRU(nn.Module):
         #=================================================================
         z_1st_layer = [nn.Linear(in_dim + h_dim, h_dim, bias=True), nn.Sigmoid()]
         self.add_module('z_0', z_1st_layer[0])
+        self.add_module('z_sig_0', z_1st_layer[1])
         r_1st_layer = [nn.Linear(in_dim + h_dim, h_dim, bias=True), nn.Sigmoid()]
         self.add_module('r_0', r_1st_layer[0])
+        self.add_module('r_sig_0', r_1st_layer[1])
         # TODO: pitfall - do all parameters update? did i add module correctly?
         g_1st_layer = [nn.Linear(in_dim + h_dim, h_dim, bias=True), nn.Tanh()]
         self.add_module('g_0',g_1st_layer[0])
+        self.add_module('g_tanh_0',g_1st_layer[1])
 
         # TODO: test with dropout = 0
         dropout_1st = nn.Dropout(dropout)
@@ -330,10 +333,13 @@ class MultilayerGRU(nn.Module):
             # TODO: does the number of layers include the first layer?
             z_layer = [nn.Linear(h_dim + h_dim, h_dim, bias=True), nn.Sigmoid()]
             self.add_module(f'z_{i}', z_layer[0])
+            self.add_module(f'z_sig_{i}', z_layer[1])
             r_layer = [nn.Linear(h_dim + h_dim, h_dim, bias=True), nn.Sigmoid()]
             self.add_module(f'r_{i}', r_layer[0])
+            self.add_module(f'r_sig_{i}', r_layer[1])
             g_layer = [nn.Linear(h_dim + h_dim, h_dim, bias=True), nn.Tanh()]
             self.add_module(f'g_{i}', g_layer[0])
+            self.add_module(f'g_tanh_{i}', g_layer[1])
             dropout_layer = nn.Dropout(dropout)
             self.add_module(f'dropout_{i}', dropout_layer)
             layer_params = [z_layer, r_layer, g_layer, dropout_layer]
