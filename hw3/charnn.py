@@ -237,7 +237,7 @@ class SequenceBatchSampler(torch.utils.data.Sampler):
         :param batch_size: Number of indices in each batch.
         """
         super().__init__(dataset)
-        self.dataset = dataset
+        self.dataset = dataset  # dataset is both the source and the target
         self.batch_size = batch_size
 
     def __iter__(self) -> Iterator[int]:
@@ -250,8 +250,14 @@ class SequenceBatchSampler(torch.utils.data.Sampler):
         #  In the case when the last batch can't have batch_size samples,
         #  you can drop it.
         idx = None  # idx should be a 1-d list of indices.
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        # ====== YOUR CODE: =====
+        # XXXXXXX Attempt 1: cut the end of the dataset so that all of the batches fit
+        # # bs = self.batch_size
+        idx = [0]*(len(self.dataset) - len(self.dataset) % bs)  # 30 in the example
+        nb = len(self.dataset) // bs # num_batches: 3 in the example
+        
+        for i in range(bs):
+            idx[i::bs] = range(i*nb, (i+1)*nb)
         # ========================
         return iter(idx)
 
