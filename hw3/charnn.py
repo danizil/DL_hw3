@@ -252,7 +252,7 @@ class SequenceBatchSampler(torch.utils.data.Sampler):
         idx = None  # idx should be a 1-d list of indices.
         # ====== YOUR CODE: =====
         # XXXXXXX Attempt 1: cut the end of the dataset so that all of the batches fit
-        # # bs = self.batch_size
+        bs = self.batch_size
         idx = [0]*(len(self.dataset) - len(self.dataset) % bs)  # 30 in the example
         nb = len(self.dataset) // bs # num_batches: 3 in the example
         
@@ -369,13 +369,13 @@ class MultilayerGRU(nn.Module):
         batch_size, seq_len, _ = input.shape
 
         layer_states = []
-        for i in range(self.n_layers):
+        for k in range(self.n_layers):
             if hidden_state is None:
                 layer_states.append(
                     torch.zeros(batch_size, self.h_dim, device=input.device)
                 )
             else:
-                layer_states.append(hidden_state[:, i, :])
+                layer_states.append(hidden_state[:, k, :])
 
         layer_input = input
         layer_output = None
@@ -386,13 +386,52 @@ class MultilayerGRU(nn.Module):
         #  Tip: You can use torch.stack() to combine multiple tensors into a
         #  single tensor in a differentiable manner.
         # ====== YOUR CODE: ======
-        # x = layer_input
-        # h = torch.zeros()
-        # for i in range(self.n_layers):
-        #     z_output = self.layer_params[i][0][1](self.layer_params[i][0][0](x))
-        #     r_layer = self.layer_params[i][0]
-        #     g_layer = self.layer_params[i][0]
-        #     dropout_layer = self.layer_params[i][3]
+
+        # initialize hidden state to 0s, layer output to the expected shape
+        #==============================
+        h = torch.zeros(batch_size, self.n_layers, self.h_dim, device=input.device) # (B, L, H)
+        layer_output = torch.zeros(batch_size, seq_len, self.out_dim, device=input.device) # (B, S, O)
+        for t in range(seq_len):
+            x_t = layer_input[:, t, :]  # (B, I)
+            # for each time step do:
+            #=======================
+            for k in range(self.n_layers):
+                # hidden state for layer k for all batches
+                #=========================================
+                h_k = h[:, k, :] # (B, H)
+                # TODO: test that the concatenation is in the right order
+                
+                # chose the layers for ease of reading 
+                # ====================================
+                z_layers = self.layer_params[k][0]
+                r_layers = self.layer_params[k][1]
+                g_layers = self.layer_params[k][2]
+                dropout_layer = self.layer_params[k][3]
+                # TODO: change to call the layers by name 
+                
+                # find z and r from simple concatenation
+                #=========================================
+                cat_xh = torch.hstack((x_t, h_k)) # (B, I + H)
+                z_output = z_layers[1](z_layers[0](cat_xh)) # (B, H)
+                r_output = r_layers[1](r_layers[0](cat_xh)) # (B, H)
+                
+                # find g and h using r and z
+                #============================
+                rh_k = r_output * h_k # (B, H)
+                cat_xrh = torch.hstack((x_t, rh_k)) # (B, I + H)
+                g_layer = g_layers[1](g_layers[0](cat_xrh)) # (B, H)
+                h_k = (1 - z_output) * h_k + z_output * g_layer # (B, H)
+                # next layer - h + dropout. next timestep - no dropout
+                x_t = dropout_layer(h_k)
+                h[:, k, :] = h_k
+            
+            # finally, apply the final W to get the output
+            # ==============================================
+            layer_output[:, t, :] = self.layer_params[-1](x_t) # (B, O)
+        hidden_state = h
+
+                
+
 
         # ========================
         return layer_output, hidden_state

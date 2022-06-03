@@ -254,14 +254,14 @@ class RNNTrainer(Trainer):
     def train_epoch(self, dl_train: DataLoader, **kw):
         # TODO: Implement modifications to the base method, if needed.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        # raise NotImplementedError()
         # ========================
         return super().train_epoch(dl_train, **kw)
 
     def test_epoch(self, dl_test: DataLoader, **kw):
         # TODO: Implement modifications to the base method, if needed.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        # raise NotImplementedError()
         # ========================
         return super().test_epoch(dl_test, **kw)
 
@@ -279,7 +279,12 @@ class RNNTrainer(Trainer):
         #  - Update params
         #  - Calculate number of correct char predictions
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        y_hat = self.model(x)
+        loss = self.loss_fn(y_hat, y)
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+        num_correct = (y_hat.argmax(dim=2) == y).sum()
         # ========================
 
         # Note: scaling num_correct by seq_len because each sample has seq_len
@@ -299,7 +304,10 @@ class RNNTrainer(Trainer):
             #  - Loss calculation
             #  - Calculate number of correct predictions
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            # TODO: do i need to to train = False or something for the dropout?
+            y_hat = self.model(x)
+            loss = self.loss_fn(y_hat, y)
+            num_correct = (y_hat.argmax(dim=2) == y).sum()
             # ========================
 
         return BatchResult(loss.item(), num_correct.item() / seq_len)
