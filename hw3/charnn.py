@@ -342,16 +342,23 @@ class MultilayerGRU(nn.Module):
         
         # initialize first layer from input dimension to hidden dimension
         #=================================================================
-        z_1st_layer = [nn.Linear(in_dim + h_dim, h_dim, bias=True), nn.Sigmoid()]
-        self.add_module('z_0', z_1st_layer[0])
-        self.add_module('z_sig_0', z_1st_layer[1])
-        r_1st_layer = [nn.Linear(in_dim + h_dim, h_dim, bias=True), nn.Sigmoid()]
-        self.add_module('r_0', r_1st_layer[0])
-        self.add_module('r_sig_0', r_1st_layer[1])
+        # z_1st_layer = [nn.Linear(in_dim + h_dim, h_dim, bias=True), nn.Sigmoid()]
+        # self.add_module('z_0', z_1st_layer[0])
+        # self.add_module('z_sig_0', z_1st_layer[1])
+        z_1st_layer = [nn.Linear(in_dim, h_dim, bias=True), nn.Linear(h_dim, h_dim, bias=False), nn.Sigmoid()]
+        self.add_module('z_xh_0', z_1st_layer[0])
+        self.add_module('z_hh_0', z_1st_layer[1])
+        self.add_module('z_sig_0', z_1st_layer[2])
+
+        r_1st_layer = [nn.Linear(in_dim, h_dim, bias=True), nn.Linear(h_dim, h_dim, bias=False), nn.Sigmoid()]
+        self.add_module('r_xh_0', r_1st_layer[0])
+        self.add_module('r_hh_0', r_1st_layer[1])
+        self.add_module('r_sig_0', r_1st_layer[2])
         # TODO: pitfall - do all parameters update? did i add module correctly?
-        g_1st_layer = [nn.Linear(in_dim + h_dim, h_dim, bias=True), nn.Tanh()]
-        self.add_module('g_0',g_1st_layer[0])
-        self.add_module('g_tanh_0',g_1st_layer[1])
+        g_1st_layer = [nn.Linear(in_dim, h_dim, bias=True), nn.Linear(h_dim, h_dim, bias=False), nn.Tanh()]
+        self.add_module('g_xh_0',g_1st_layer[0])
+        self.add_module('g_hh_0',g_1st_layer[1])
+        self.add_module('g_tanh_0',g_1st_layer[2])
 
         # TODO: test with dropout = 0
         dropout_1st = nn.Dropout(dropout)
@@ -365,16 +372,18 @@ class MultilayerGRU(nn.Module):
         # construct the rest of the layers
         #=================================
         for i in range(1, n_layers):
-            # TODO: does the number of layers include the first layer?
-            z_layer = [nn.Linear(h_dim + h_dim, h_dim, bias=True), nn.Sigmoid()]
-            self.add_module(f'z_{i}', z_layer[0])
-            self.add_module(f'z_sig_{i}', z_layer[1])
-            r_layer = [nn.Linear(h_dim + h_dim, h_dim, bias=True), nn.Sigmoid()]
-            self.add_module(f'r_{i}', r_layer[0])
-            self.add_module(f'r_sig_{i}', r_layer[1])
-            g_layer = [nn.Linear(h_dim + h_dim, h_dim, bias=True), nn.Tanh()]
-            self.add_module(f'g_{i}', g_layer[0])
-            self.add_module(f'g_tanh_{i}', g_layer[1])
+            z_layer = [nn.Linear(h_dim, h_dim, bias=True), nn.Linear(h_dim, h_dim, bias=False), nn.Sigmoid()]
+            self.add_module(f'z_xh_{i}', z_layer[0])
+            self.add_module(f'z_hh_{i}', z_layer[1])
+            self.add_module(f'z_sig_{i}', z_layer[2])
+            r_layer = [nn.Linear(h_dim, h_dim, bias=True), nn.Linear(h_dim, h_dim, bias=False), nn.Sigmoid()]
+            self.add_module(f'r_xh_{i}', r_layer[0])
+            self.add_module(f'r_hh_{i}', r_layer[1])
+            self.add_module(f'r_sig_{i}', r_layer[2])
+            g_layer = [nn.Linear(h_dim, h_dim, bias=True), nn.Linear(h_dim, h_dim, bias=False), nn.Tanh()]
+            self.add_module(f'g_xh_{i}', g_layer[0])
+            self.add_module(f'g_hh_{i}', g_layer[1])
+            self.add_module(f'g_tanh_{i}', g_layer[2])
             dropout_layer = nn.Dropout(dropout)
             self.add_module(f'dropout_{i}', dropout_layer)
             layer_params = [z_layer, r_layer, g_layer, dropout_layer]
@@ -430,17 +439,18 @@ class MultilayerGRU(nn.Module):
 
         # initialize hidden state to hidden state, layer output to the expected shape
         #==============================
-        h = torch.stack(layer_states, dim=1)
+        # h = torch.stack(layer_states, dim=1)
         # h = torch.zeros(batch_size, self.n_layers, self.h_dim, device=input.device) # (B, L, H)
         layer_output = torch.zeros(batch_size, seq_len, self.out_dim, device=input.device) # (B, S, O)
         for t in range(seq_len):
-            x_t = layer_input[:, t, :]  # (B, I)
+            x_t = layer_input[:, t, :].float()  # (B, I)
             # for each time step do:
             #=======================
             for k in range(self.n_layers):
                 # hidden state for layer k for all batches
                 #=========================================
-                h_k = h[:, k, :] # (B, H)
+                # h_k = h[:, k, :] # (B, H)
+                h_k = layer_states[k] # (B, H)
                 # TODO: test that the concatenation is in the right order
                 
                 # chose the layers for ease of reading 
@@ -454,23 +464,29 @@ class MultilayerGRU(nn.Module):
                 # find z and r from simple concatenation
                 #=========================================
                 cat_xh = torch.hstack((x_t, h_k)) # (B, I + H)
-                z_output = z_layers[1](z_layers[0](cat_xh)) # (B, H)
-                r_output = r_layers[1](r_layers[0](cat_xh)) # (B, H)
-                
+                # z_output = z_layers[1](z_layers[0](cat_xh)) # (B, H)
+                # r_output = r_layers[1](r_layers[0](cat_xh)) # (B, H)
+                z_output = z_layers[2](z_layers[0](x_t) + z_layers[1](h_k)) # (B, H)
+                r_output = r_layers[2](r_layers[0](x_t) + r_layers[1](h_k)) # (B, H)
+
                 # find g and h using r and z
                 #============================
                 rh_k = r_output * h_k # (B, H)
-                cat_xrh = torch.hstack((x_t, rh_k)) # (B, I + H)
-                g_layer = g_layers[1](g_layers[0](cat_xrh)) # (B, H)
+
+                # cat_xrh = torch.hstack((x_t, rh_k)) # (B, I + H)
+                # g_layer = g_layers[1](g_layers[0](cat_xrh)) # (B, H)
+
+                g_layer = g_layers[2](g_layers[0](x_t) + g_layers[1](rh_k)) # (B, H)
                 h_k = (1 - z_output) * h_k + z_output * g_layer # (B, H)
                 # next layer - h + dropout. next timestep - no dropout
                 x_t = dropout_layer(h_k)
-                h[:, k, :] = h_k
+                # h[:, k, :] = h_k
+                layer_states[k] = h_k
             
             # finally, apply the final W to get the output
             # ==============================================
             layer_output[:, t, :] = self.layer_params[-1](x_t) # (B, O)
-        hidden_state = h
+        hidden_state = torch.stack(layer_states, dim=1)
 
                 
 

@@ -284,7 +284,7 @@ class RNNTrainer(Trainer):
         out_hidden = out[1]
 
         # loss = self.loss_fn(out_seq.transpose(1,2), y)
-        loss = self.loss_fn(out_seq, y)
+        loss = self.loss_fn(out_seq.transpose(1,2), y)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
