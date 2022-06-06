@@ -240,8 +240,8 @@ def generate_from_model(model, start_sequence, n_chars, char_maps, T):
         last_char_onehot[last_char_ind] = 1
         out_text += idx_to_char[last_char_ind.item()]
 
+        #  3. Feed the new char into the model, rinse and repeat.
         for _ in range(n_chars-len(start_sequence) - 1):
-            #  3. Feed the new char into the model.
             out = model(last_char_onehot.unsqueeze(0).unsqueeze(0), out_hidden_state)
             out_char_scores = out[0].squeeze(0).squeeze(0)
             out_hidden_state = out[1]
@@ -253,8 +253,6 @@ def generate_from_model(model, start_sequence, n_chars, char_maps, T):
 
             out_text += idx_to_char[last_char_ind.item()]
 
-
-        
 
     # ========================
 

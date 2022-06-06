@@ -279,12 +279,16 @@ class RNNTrainer(Trainer):
         #  - Update params
         #  - Calculate number of correct char predictions
         # ====== YOUR CODE: ======
-        y_hat = self.model(x)
-        loss = self.loss_fn(y_hat, y)
+        out = self.model(x)
+        out_seq = out[0]
+        out_hidden = out[1]
+
+        # loss = self.loss_fn(out_seq.transpose(1,2), y)
+        loss = self.loss_fn(out_seq, y)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        num_correct = (y_hat.argmax(dim=2) == y).sum()
+        num_correct = (out_seq.argmax(dim=2) == y).sum()
         # ========================
 
         # Note: scaling num_correct by seq_len because each sample has seq_len
