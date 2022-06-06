@@ -182,7 +182,8 @@ def hot_softmax(y, dim=0, temperature=1.0):
     """
     # TODO: Implement based on the above.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    y = y/temperature
+    result = torch.softmax(y, dim=dim)
     # ========================
     return result
 
@@ -218,7 +219,43 @@ def generate_from_model(model, start_sequence, n_chars, char_maps, T):
     #  necessary for this. Best to disable tracking for speed.
     #  See torch.no_grad().
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    #  1. Feed the start_sequence into the model.
+    #===============================================
+    with torch.no_grad():
+        start_sequence = start_sequence
+        start_sequence_onehot = chars_to_onehot(start_sequence, char_to_idx)
+        start_sequence_onehot = start_sequence_onehot.unsqueeze(0)
+
+        out = model(start_sequence_onehot)
+        out_seq_scores = out[0].squeeze(0)
+        out_hidden_state = out[1]
+
+        last_char_scores = out_seq_scores[-1]
+
+        #  2. Sample a new char from the output distribution of the last output
+        #     char. Convert output to probabilities first.
+        last_char_probs = hot_softmax(last_char_scores, dim=0, temperature=T)
+        last_char_ind = torch.multinomial(last_char_probs, 1)
+        last_char_onehot = torch.zeros(last_char_probs.shape, device=device)
+        last_char_onehot[last_char_ind] = 1
+        out_text += idx_to_char[last_char_ind.item()]
+
+        for _ in range(n_chars-len(start_sequence) - 1):
+            #  3. Feed the new char into the model.
+            out = model(last_char_onehot.unsqueeze(0).unsqueeze(0), out_hidden_state)
+            out_char_scores = out[0].squeeze(0).squeeze(0)
+            out_hidden_state = out[1]
+
+            last_char_probs = hot_softmax(out_char_scores, dim=0, temperature=T)
+            last_char_ind = torch.multinomial(last_char_probs, 1)
+            last_char_onehot = torch.zeros(last_char_probs.shape, device=device)
+            last_char_onehot[last_char_ind] = 1
+
+            out_text += idx_to_char[last_char_ind.item()]
+
+
+        
+
     # ========================
 
     return out_text
@@ -393,9 +430,10 @@ class MultilayerGRU(nn.Module):
         #  single tensor in a differentiable manner.
         # ====== YOUR CODE: ======
 
-        # initialize hidden state to 0s, layer output to the expected shape
+        # initialize hidden state to hidden state, layer output to the expected shape
         #==============================
-        h = torch.zeros(batch_size, self.n_layers, self.h_dim, device=input.device) # (B, L, H)
+        h = torch.stack(layer_states, dim=1)
+        # h = torch.zeros(batch_size, self.n_layers, self.h_dim, device=input.device) # (B, L, H)
         layer_output = torch.zeros(batch_size, seq_len, self.out_dim, device=input.device) # (B, S, O)
         for t in range(seq_len):
             x_t = layer_input[:, t, :]  # (B, I)
