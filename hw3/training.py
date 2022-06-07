@@ -254,7 +254,7 @@ class RNNTrainer(Trainer):
     def train_epoch(self, dl_train: DataLoader, **kw):
         # TODO: Implement modifications to the base method, if needed.
         # ====== YOUR CODE: ======
-        # self.hidden_state = None
+        self.hidden_state = None
         
         # ========================
         return super().train_epoch(dl_train, **kw)
@@ -281,10 +281,12 @@ class RNNTrainer(Trainer):
         #  - Calculate number of correct char predictions
         # ====== YOUR CODE: ======
         
-        out = self.model(x)
+        out = self.model(x, self.hidden_state)
         out_seq = out[0]
         out_hidden = out[1]
-        # self.hidden_state = out_hidden
+        # tested that everything updates - breakpoint after backwards and in console self.model.z_hh_0.weight see that it changes after two backward
+        self.hidden_state = out_hidden.detach()
+
         loss = self.loss_fn(out_seq.transpose(1,2), y)
         self.optimizer.zero_grad()
         loss.backward()
