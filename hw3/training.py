@@ -285,8 +285,6 @@ class RNNTrainer(Trainer):
         out_seq = out[0]
         out_hidden = out[1]
         # self.hidden_state = out_hidden
-        # self.optimizer.param_groups[0]['params']+= self.hidden_state
-        # loss = self.loss_fn(out_seq.transpose(1,2), y)
         loss = self.loss_fn(out_seq.transpose(1,2), y)
         self.optimizer.zero_grad()
         loss.backward()
