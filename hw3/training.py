@@ -254,14 +254,15 @@ class RNNTrainer(Trainer):
     def train_epoch(self, dl_train: DataLoader, **kw):
         # TODO: Implement modifications to the base method, if needed.
         # ====== YOUR CODE: ======
-        # raise NotImplementedError()
+        # self.hidden_state = None
+        
         # ========================
         return super().train_epoch(dl_train, **kw)
 
     def test_epoch(self, dl_test: DataLoader, **kw):
         # TODO: Implement modifications to the base method, if needed.
         # ====== YOUR CODE: ======
-        # raise NotImplementedError()
+        
         # ========================
         return super().test_epoch(dl_test, **kw)
 
@@ -279,16 +280,19 @@ class RNNTrainer(Trainer):
         #  - Update params
         #  - Calculate number of correct char predictions
         # ====== YOUR CODE: ======
+        
         out = self.model(x)
         out_seq = out[0]
         out_hidden = out[1]
-
+        # self.hidden_state = out_hidden
+        # self.optimizer.param_groups[0]['params']+= self.hidden_state
         # loss = self.loss_fn(out_seq.transpose(1,2), y)
         loss = self.loss_fn(out_seq.transpose(1,2), y)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
         num_correct = (out_seq.argmax(dim=2) == y).sum()
+        
         # ========================
 
         # Note: scaling num_correct by seq_len because each sample has seq_len
@@ -309,9 +313,10 @@ class RNNTrainer(Trainer):
             #  - Calculate number of correct predictions
             # ====== YOUR CODE: ======
             # TODO: do i need to to train = False or something for the dropout?
-            y_hat = self.model(x)
-            loss = self.loss_fn(y_hat, y)
-            num_correct = (y_hat.argmax(dim=2) == y).sum()
+            raise(NotImplementedError())
+            # y_hat = self.model(x)
+            # loss = self.loss_fn(y_hat[0], y)
+            # num_correct = (y_hat.argmax(dim=2) == y).sum()
             # ========================
 
         return BatchResult(loss.item(), num_correct.item() / seq_len)

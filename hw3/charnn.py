@@ -439,8 +439,7 @@ class MultilayerGRU(nn.Module):
 
         # initialize hidden state to hidden state, layer output to the expected shape
         #==============================
-        # h = torch.stack(layer_states, dim=1)
-        # h = torch.zeros(batch_size, self.n_layers, self.h_dim, device=input.device) # (B, L, H)
+        
         layer_output = torch.zeros(batch_size, seq_len, self.out_dim, device=input.device) # (B, S, O)
         for t in range(seq_len):
             x_t = layer_input[:, t, :].float()  # (B, I)
@@ -463,19 +462,12 @@ class MultilayerGRU(nn.Module):
                 
                 # find z and r from simple concatenation
                 #=========================================
-                cat_xh = torch.hstack((x_t, h_k)) # (B, I + H)
-                # z_output = z_layers[1](z_layers[0](cat_xh)) # (B, H)
-                # r_output = r_layers[1](r_layers[0](cat_xh)) # (B, H)
                 z_output = z_layers[2](z_layers[0](x_t) + z_layers[1](h_k)) # (B, H)
                 r_output = r_layers[2](r_layers[0](x_t) + r_layers[1](h_k)) # (B, H)
 
                 # find g and h using r and z
                 #============================
                 rh_k = r_output * h_k # (B, H)
-
-                # cat_xrh = torch.hstack((x_t, rh_k)) # (B, I + H)
-                # g_layer = g_layers[1](g_layers[0](cat_xrh)) # (B, H)
-
                 g_layer = g_layers[2](g_layers[0](x_t) + g_layers[1](rh_k)) # (B, H)
                 h_k = (1 - z_output) * h_k + z_output * g_layer # (B, H)
                 # next layer - h + dropout. next timestep - no dropout
