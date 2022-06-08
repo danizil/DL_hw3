@@ -262,7 +262,7 @@ class RNNTrainer(Trainer):
     def test_epoch(self, dl_test: DataLoader, **kw):
         # TODO: Implement modifications to the base method, if needed.
         # ====== YOUR CODE: ======
-        
+        self.hidden_state = None
         # ========================
         return super().test_epoch(dl_test, **kw)
 
@@ -285,6 +285,8 @@ class RNNTrainer(Trainer):
         out_seq = out[0]
         out_hidden = out[1]
         # tested that everything updates - breakpoint after backwards and in console self.model.z_hh_0.weight see that it changes after two backward
+        
+        
         self.hidden_state = out_hidden.detach()
 
         loss = self.loss_fn(out_seq.transpose(1,2), y)
@@ -313,7 +315,13 @@ class RNNTrainer(Trainer):
             #  - Calculate number of correct predictions
             # ====== YOUR CODE: ======
             # TODO: do i need to to train = False or something for the dropout?
-            raise(NotImplementedError())
+            out = self.model(x, self.hidden_state)
+            out_seq = out[0]
+            out_hidden = out[1]
+            self.hidden_state = out_hidden.detach()
+
+            loss = self.loss_fn(out_seq.transpose(1,2), y)
+            num_correct = (out_seq.argmax(dim=2) == y).sum()
             # y_hat = self.model(x)
             # loss = self.loss_fn(y_hat[0], y)
             # num_correct = (y_hat.argmax(dim=2) == y).sum()
