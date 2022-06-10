@@ -223,7 +223,7 @@ def generate_from_model(model, start_sequence, n_chars, char_maps, T):
     #===============================================
     with torch.no_grad():
         start_sequence = start_sequence
-        start_sequence_onehot = chars_to_onehot(start_sequence, char_to_idx)
+        start_sequence_onehot = chars_to_onehot(start_sequence, char_to_idx).to(device)
         start_sequence_onehot = start_sequence_onehot.unsqueeze(0)
 
         out = model(start_sequence_onehot)

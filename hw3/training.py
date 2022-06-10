@@ -255,6 +255,7 @@ class RNNTrainer(Trainer):
         # TODO: Implement modifications to the base method, if needed.
         # ====== YOUR CODE: ======
         self.hidden_state = None
+        self.hidden_state.to(self.device)
         
         # ========================
         return super().train_epoch(dl_train, **kw)
