@@ -255,8 +255,11 @@ class RNNTrainer(Trainer):
         # TODO: Implement modifications to the base method, if needed.
         # ====== YOUR CODE: ======
         self.hidden_state = None
+<<<<<<< HEAD
         self.hidden_state.to(self.device)
         
+=======
+>>>>>>> 4c312b7528ec982d853e42203e4ee504886f0a88
         # ========================
         return super().train_epoch(dl_train, **kw)
 
@@ -285,11 +288,9 @@ class RNNTrainer(Trainer):
         out = self.model(x, self.hidden_state)
         out_seq = out[0]
         out_hidden = out[1]
-        # tested that everything updates - breakpoint after backwards and in console self.model.z_hh_0.weight see that it changes after two backward
-        
         
         self.hidden_state = out_hidden.detach()
-
+        
         loss = self.loss_fn(out_seq.transpose(1,2), y)
         self.optimizer.zero_grad()
         loss.backward()
