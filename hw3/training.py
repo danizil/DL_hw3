@@ -62,6 +62,7 @@ class Trainer(abc.ABC):
         :param post_epoch_fn: A function to call after each epoch completes.
         :return: A FitResult object containing train and test losses per epoch.
         """
+        import numpy as np
 
         actual_num_epochs = 0
         epochs_without_improvement = 0
@@ -86,14 +87,17 @@ class Trainer(abc.ABC):
 
             train_result = self.train_epoch(dl_train, verbose=verbose, **kw)
             # don't know whethe to take the last loss or some average of the epoch
-            avg_loss_epoch = train_result.losses.mean()
-            train_loss.append(avg_loss_epoch.item())
-            train_acc.append(train_result.accuracy.item())
+            avg_train_loss_epoch = np.array(train_result.losses).mean()
+            std_train_loss_epoch = np.array(train_result.losses).std()
+            train_loss.append(avg_train_loss_epoch.item())
+            train_acc.append(train_result.accuracy)
 
             test_result = self.test_epoch(dl_test, verbose=verbose, **kw)
             # don't think that the test result has many losses. think it's only got 1
-            test_loss.append(test_result.losses.item())
-            test_acc.append(test_result.accuracy.item())
+            avg_test_loss_epoch = np.array(test_result.losses).mean()
+            std_test_loss_epoch = np.array(test_result.losses).std()
+            test_loss.append(avg_test_loss_epoch)
+            test_acc.append(test_result.accuracy)
             # ========================
 
             # TODO:
