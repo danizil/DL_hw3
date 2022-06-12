@@ -22,6 +22,7 @@ def part1_rnn_hyperparams():
     )
     # TODO: Set the hyperparameters to train the model.
     # ====== YOUR CODE: ======
+     # Dan: this got me to ~50%
     # hypers['batch_size']=512
     # hypers['seq_len']=32
     # hypers['h_dim']=128
@@ -30,6 +31,9 @@ def part1_rnn_hyperparams():
     # hypers['learn_rate']=0.01
     # hypers['lr_sched_factor']=0.1
     # hypers['lr_sched_patience']=10
+    
+    # After that, lowered lr to 0.005
+    # will increase seq len to 64, h_dim to 256, n_layers to 4
 
     hypers['batch_size']=512
     hypers['seq_len']=32
