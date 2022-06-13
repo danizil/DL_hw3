@@ -19,7 +19,16 @@ class EncoderCNN(nn.Module):
         #  use pooling or only strides, use any activation functions,
         #  use BN or Dropout, etc.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        # TODO: q: what rate to go up in channels?
+              # q: what rate to go down in dimension?
+        n_layers = 3
+        dropout = 0.4
+        kernel_size = 3   
+        inner_channels = [in_channels] + [32*4**i for i in range(n_layers - 1)] + [out_channels]
+        for i in range(n_layers):
+            #TODO: do we need to put batchnorm and dropout in the final layer?
+            modules += [nn.Conv2d(inner_channels[i], inner_channels[i+1], kernel_size, padding=kernel_size//2, stride=2),
+                       nn.Dropout2d(dropout) ,nn.BatchNorm2d(inner_channels[i+1])]
         # ========================
         self.cnn = nn.Sequential(*modules)
 
