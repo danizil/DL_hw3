@@ -23,12 +23,17 @@ class EncoderCNN(nn.Module):
               # q: what rate to go down in dimension?
         n_layers = 3
         dropout = 0.4
-        kernel_size = 3   
-        inner_channels = [in_channels] + [32*4**i for i in range(n_layers - 1)] + [out_channels]
+
+        kernel_sizes = [3,3,3]   
+        paddings = [1,1,1]
+        strides = [2,2,2]
+
+        inner_channels = [in_channels] + [32*8**i for i in range(n_layers - 1)] + [out_channels]
+        # the sizes are: 64 -> 32 -> 16 -> 8, this setup shinks by 2 each time
         for i in range(n_layers):
             #TODO: do we need to put batchnorm and dropout in the final layer?
-            modules += [nn.Conv2d(inner_channels[i], inner_channels[i+1], kernel_size, padding=kernel_size//2, stride=2),
-                       nn.Dropout2d(dropout) ,nn.BatchNorm2d(inner_channels[i+1])]
+            modules += [nn.Conv2d(inner_channels[i], inner_channels[i+1], kernel_sizes[i], strides[i], paddings[i]),
+                        nn.Dropout2d(dropout) ,nn.BatchNorm2d(inner_channels[i+1]), nn.ReLU(),]
         # ========================
         self.cnn = nn.Sequential(*modules)
 
@@ -51,8 +56,24 @@ class DecoderCNN(nn.Module):
         #  output should be a batch of images, with same dimensions as the
         #  inputs to the Encoder were.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        n_layers = 3
+        dropout = 0.4
+        kernel_sizes = [3,3,3]
+        strides = [2,2,2]
+        paddings = [1,1,1]
+        # TODO: I don't like having 0 padding on the final image!
+        output_paddings = [1,1,1]
+
+        inner_channels = [out_channels] + [32*8**i for i in range(n_layers - 1)] + [in_channels]
+        inner_channels.reverse()
+        for i in range(n_layers):
+            modules += [nn.ConvTranspose2d(inner_channels[i], inner_channels[i+1], kernel_sizes[i], strides[i], paddings[i], output_paddings[i]),
+                       nn.ReLU() ,nn.Dropout2d(dropout) ,nn.BatchNorm2d(inner_channels[i+1])]
+        # another convolution at the end for the outer zero padding to not matter so much and for the final move not to be
+        # relu
+        modules += [nn.Conv2d(out_channels, out_channels, 3, padding =1)]
         # ========================
+        
         self.cnn = nn.Sequential(*modules)
 
     def forward(self, h):
