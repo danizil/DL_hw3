@@ -167,7 +167,11 @@ class VAE(nn.Module):
             #    Instead of sampling from N(psi(z), sigma2 I), we'll just take
             #    the mean, i.e. psi(z).
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            # sample from normal distribution
+            # decode
+            samples_z = torch.randn(n, self.z_dim, device=device)
+            samples = self.decode(samples_z)
+
             # ========================
 
         # Detach and move to CPU for display purposes
