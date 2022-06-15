@@ -116,14 +116,18 @@ An equation: $e^{i\pi} -1 = 0$
 
 PART2_CUSTOM_DATA_URL = None
 
-
 def part2_vae_hyperparams():
     hypers = dict(
         batch_size=0, h_dim=0, z_dim=0, x_sigma2=0, learn_rate=0.0, betas=(0.0, 0.0),
     )
     # TODO: Tweak the hyperparameters to generate a former president.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    hypers['batch_size'] = 512
+    hypers['h_dim'] = 128
+    hypers['z_dim'] = 32
+    hypers['x_sigma2'] = 0.1
+    hypers['learn_rate'] = 0.01
+    hypers['betas'] = (0.9, 0.999)
     # ========================
     return hypers
 
