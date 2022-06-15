@@ -1,3 +1,4 @@
+from zmq import device
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -100,7 +101,12 @@ class VAE(nn.Module):
 
         # TODO: Add more layers as needed for encode() and decode().
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        # H, W = self.features_shape[1:]
+        import numpy as np
+        self.enc_mean = nn.Linear(np.prod(self.features_shape), z_dim)
+        self.enc_log_sigma2 = nn.Linear(np.prod(self.features_shape), z_dim)
+
+        self.fc_decoder = nn.Linear(z_dim, np.prod(self.features_shape))
         # ========================
 
     def _check_features(self, in_size):
@@ -121,7 +127,15 @@ class VAE(nn.Module):
         #     log_sigma2 (mean and log variance) of q(Z|x).
         #  2. Apply the reparametrization trick to obtain z.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        h = self.features_encoder(x)
+        h = h.view(h.shape[0], -1)
+        mu = self.enc_mean(h)
+        # yah it's log because varience can't be negative. why is it variance and not std though?
+        log_sigma2 = self.enc_log_sigma2(h)
+        u = torch.randn_like(log_sigma2)
+
+        z = mu + torch.exp(log_sigma2/2) * u
+
         # ========================
 
         return z, mu, log_sigma2
