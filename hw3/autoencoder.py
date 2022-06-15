@@ -146,7 +146,9 @@ class VAE(nn.Module):
         #  1. Convert latent z to features h with a linear layer.
         #  2. Apply features decoder.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        h = self.fc_decoder(z)
+        h = h.view(h.shape[0], *self.features_shape)
+        x_rec = self.features_decoder(h)  
         # ========================
 
         # Scale to [-1, 1] (same dynamic range as original images).
@@ -198,7 +200,17 @@ def vae_loss(x, xr, z_mu, z_log_sigma2, x_sigma2):
     #  1. The covariance matrix of the posterior is diagonal.
     #  2. You need to average over the batch dimension.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    import numpy as np
+
+    x_dim = np.prod(x.shape[1:])
+    z_dim = z_mu.shape[1]
+    batch_size = x.shape[0]
+
+    data_loss = 1/batch_size*(1/(x_sigma2*x_dim) * torch.sum(torch.square(x - xr)))
+    # KL is trace determinant mean and z dim
+    # DAN: notice that we do not include z_dim in the averaging!!
+    kldiv_loss = 1/(batch_size)*(torch.sum(torch.exp(z_log_sigma2)) - torch.sum(z_log_sigma2) + torch.sum(torch.square(z_mu))) - z_dim
+    loss = data_loss + kldiv_loss
     # ========================
 
     return loss, data_loss, kldiv_loss
