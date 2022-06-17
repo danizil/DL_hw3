@@ -12,7 +12,7 @@ class PrintLayer(nn.Module):
         return x
 
 class EncoderCNN(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, dropout=0):
         super().__init__()
 
         modules = []
@@ -30,7 +30,7 @@ class EncoderCNN(nn.Module):
         # TODO: q: what rate to go up in channels?
               # q: what rate to go down in dimension?
         n_layers = 3
-        dropout = 0.2
+        # dropout = 0.2
 
         kernel_sizes = [3,3,3]   
         paddings = [1,1,1]
@@ -50,7 +50,7 @@ class EncoderCNN(nn.Module):
 
 
 class DecoderCNN(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, dropout=0):
         super().__init__()
 
         modules = []
@@ -65,7 +65,7 @@ class DecoderCNN(nn.Module):
         #  inputs to the Encoder were.
         # ====== YOUR CODE: ======
         n_layers = 3
-        dropout = 0.2
+        # dropout = 0.2
         kernel_sizes = [3,3,3]
         strides = [2,2,2]
         paddings = [1,1,1]
@@ -139,7 +139,11 @@ class VAE(nn.Module):
         mu = self.enc_mean(h)
         # yah it's log because varience can't be negative. why is it variance and not std though?
         log_sigma2 = self.enc_log_sigma2(h)
-        u = torch.randn_like(log_sigma2)
+        
+        # VERY BAD JUST TO OVERFIT THIS GOOD!!
+        # u = torch.randn_like(log_sigma2)
+        u=0
+        # ==========================
         z = mu + torch.exp(log_sigma2/2) * u
 
         # ========================

@@ -1,4 +1,5 @@
 import math
+from tkinter import N
 import numpy as np
 import itertools
 import matplotlib.pyplot as plt
@@ -9,7 +10,7 @@ def tensor_as_image(tensor, figsize=(8, 8), cmap=None):
     '''DAN: tensors_as_images doesn't work for single tensors'''
     if isinstance(tensor, list):
         tensor = tensor[0]
-    image = tensor.numpy()
+    image = tensor.detach().numpy()
     image = image.squeeze()  # remove singleton dimensions if any exist
     image = image.transpose(1, 2, 0)
 
@@ -17,7 +18,11 @@ def tensor_as_image(tensor, figsize=(8, 8), cmap=None):
     min, max = np.min(image), np.max(image)
     image = (image - min) / (max - min)
 
-    plt.imshow(image, cmap=cmap)
+    fig, ax = plt.subplots()
+    ax.imshow(image, cmap=cmap)
+    ax.axis('off')
+    
+    return fig, ax
 
 
 
@@ -43,7 +48,7 @@ def tensors_as_images(
         subplot_kw=dict(yticks=[], xticks=[]),
     )
     axes_flat = axes.reshape(-1)
-
+    
     # Plot each tensor
     for i in range(num_tensors):
         ax = axes_flat[i]
