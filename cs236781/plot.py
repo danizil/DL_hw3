@@ -5,6 +5,21 @@ import matplotlib.pyplot as plt
 
 from .train_results import FitResult
 
+def tensor_as_image(tensor, figsize=(8, 8), cmap=None):
+    '''DAN: tensors_as_images doesn't work for single tensors'''
+    if isinstance(tensor, list):
+        tensor = tensor[0]
+    image = tensor.numpy()
+    image = image.squeeze()  # remove singleton dimensions if any exist
+    image = image.transpose(1, 2, 0)
+
+    # Scale to range 0..1
+    min, max = np.min(image), np.max(image)
+    image = (image - min) / (max - min)
+
+    plt.imshow(image, cmap=cmap)
+
+
 
 def tensors_as_images(
     tensors, nrows=1, figsize=(8, 8), titles=[], wspace=0.1, hspace=0.2, cmap=None

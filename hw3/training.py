@@ -356,12 +356,13 @@ class VAETrainer(Trainer):
         x = x.to(self.device)  # Image batch (N,C,H,W)
         # TODO: Train a VAE on one batch.
         # ====== YOUR CODE: ======
+        
+        self.optimizer.zero_grad()
         xr, z_mu, z_log_sigma2 = self.model(x)
         loss, data_loss, kldiv_loss = self.loss_fn(x, xr, z_mu, z_log_sigma2)
-        self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        # ========================
+        #========================
 
         return BatchResult(loss.item(), 1 / data_loss.item())
 
