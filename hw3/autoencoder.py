@@ -79,7 +79,7 @@ class DecoderCNN(nn.Module):
                        nn.Dropout2d(dropout) ,nn.BatchNorm2d(inner_channels[i+1]), nn.ReLU() ]
         # another convolution at the end for the outer zero padding to not matter so much and for the final move not to be
         # relu
-        modules += [nn.Conv2d(out_channels, out_channels, 3, padding =1)]
+        modules += [nn.Conv2d(out_channels, out_channels, 3, padding =1), nn.Tanh()]
         # ========================
         
         self.cnn = nn.Sequential(*modules)
@@ -140,9 +140,9 @@ class VAE(nn.Module):
         # yah it's log because varience can't be negative. why is it variance and not std though?
         log_sigma2 = self.enc_log_sigma2(h)
         
+        u = torch.randn_like(log_sigma2)
         # VERY BAD JUST TO OVERFIT THIS GOOD!!
-        # u = torch.randn_like(log_sigma2)
-        u=0
+        # u=0
         # ==========================
         z = mu + torch.exp(log_sigma2/2) * u
 
