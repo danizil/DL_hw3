@@ -139,7 +139,7 @@ class Trainer(abc.ABC):
         dirname = os.path.dirname(checkpoint_filename) or "."
         os.makedirs(dirname, exist_ok=True)
         torch.save({"model_state": self.model.state_dict()}, checkpoint_filename)
-        print(f"\n*** Saved checkpoint {checkpoint_filename}")
+        print(f"\n*** Saved checkpoint {checkpoint_filename}" + ".pt")
 
     def train_epoch(self, dl_train: DataLoader, **kw) -> EpochResult:
         """
