@@ -40,8 +40,9 @@ class EncoderCNN(nn.Module):
         # the sizes are: 64 -> 32 -> 16 -> 8, this setup shinks by 2 each time
         for i in range(n_layers):
             #TODO: do we need to put batchnorm and dropout in the final layer?
+            
             modules += [nn.Conv2d(inner_channels[i], inner_channels[i+1], kernel_sizes[i], strides[i], paddings[i], bias=True),
-                        nn.Dropout2d(dropout) ,nn.BatchNorm2d(inner_channels[i+1]), nn.ReLU()]
+                        nn.Dropout2d(dropout) ,nn.BatchNorm2d(inner_channels[i+1]), nn.LeakyReLU(0.2)]
         # ========================
         self.cnn = nn.Sequential(*modules)
 
@@ -69,17 +70,16 @@ class DecoderCNN(nn.Module):
         kernel_sizes = [3,3,3]
         strides = [2,2,2]
         paddings = [1,1,1]
-        # TODO: I don't like having 0 padding on the final image!
         output_paddings = [1,1,1]
 
         inner_channels = [out_channels] + [32*8**i for i in range(n_layers - 1)] + [in_channels]
         inner_channels.reverse()
         for i in range(n_layers):
             modules += [nn.ConvTranspose2d(inner_channels[i], inner_channels[i+1], kernel_sizes[i], strides[i], paddings[i], output_paddings[i], bias=True),
-                       nn.Dropout2d(dropout) ,nn.BatchNorm2d(inner_channels[i+1]), nn.ReLU() ]
+                       nn.Dropout2d(dropout) ,nn.BatchNorm2d(inner_channels[i+1]), nn.LeakyReLU(0.2) ]
         # another convolution at the end for the outer zero padding to not matter so much and for the final move not to be
         # relu
-        modules += [nn.Conv2d(out_channels, out_channels, 3, padding =1), nn.Tanh()]
+        modules += [nn.Conv2d(out_channels, out_channels, 3, padding =1)]
         # ========================
         
         self.cnn = nn.Sequential(*modules)
@@ -108,12 +108,10 @@ class VAE(nn.Module):
 
         # TODO: Add more layers as needed for encode() and decode().
         # ====== YOUR CODE: ======
-        # H, W = self.features_shape[1:]
-        import numpy as np
-        self.enc_mean = nn.Sequential(nn.Linear(np.prod(self.features_shape), z_dim))
-        self.enc_log_sigma2 = nn.Sequential(nn.Linear(np.prod(self.features_shape), z_dim))
+        self.enc_mean = nn.Sequential(nn.Linear(n_features, z_dim))
+        self.enc_log_sigma2 = nn.Sequential(nn.Linear(n_features, z_dim))
 
-        self.fc_decoder = nn.Linear(z_dim, np.prod(self.features_shape))
+        self.fc_decoder = nn.Linear(z_dim, n_features)
         # ========================
 
     def _check_features(self, in_size):
