@@ -27,22 +27,25 @@ class EncoderCNN(nn.Module):
         #  use pooling or only strides, use any activation functions,
         #  use BN or Dropout, etc.
         # ====== YOUR CODE: ======
-        # TODO: q: what rate to go up in channels?
-              # q: what rate to go down in dimension?
-        n_layers = 3
+        # TODO: q: what rate to go up in channels? let's try increasing channels as we decrease spatial
+              # q: what rate to go down in dimension? 2
+        n_layers = 4
         # dropout = 0.2
 
-        kernel_sizes = [3,3,3]   
-        paddings = [1,1,1]
-        strides = [2,2,2]
+        kernel_sizes = [3,3,3,3]   
+        paddings = [1,1,1,1]
+        strides = [2,2,2,2]
 
-        inner_channels = [in_channels] + [32*8**i for i in range(n_layers - 1)] + [out_channels]
-        # the sizes are: 64 -> 32 -> 16 -> 8, this setup shinks by 2 each time
+        inner_channels = [in_channels] + [32*4**i for i in range(n_layers - 1)] + [out_channels]
+        bn = [nn.BatchNorm2d(inner_channels[i+1]) for i in range(n_layers)]
+        activations = [nn.LeakyReLU(0.2)]*n_layers
+        # the sizes are: 64 -> 32 -> 16 -> 8 -> 4, this setup shinks by 2 each time
         for i in range(n_layers):
             #TODO: do we need to put batchnorm and dropout in the final layer?
             
             modules += [nn.Conv2d(inner_channels[i], inner_channels[i+1], kernel_sizes[i], strides[i], paddings[i], bias=True),
-                        nn.Dropout2d(dropout) ,nn.BatchNorm2d(inner_channels[i+1]), nn.LeakyReLU(0.2)]
+                        bn[i], activations[i]]
+        # modules += [nn.Conv2d(out_channels, out_channels, 3, 1, 1, bias=True)]
         # ========================
         self.cnn = nn.Sequential(*modules)
 
@@ -65,21 +68,23 @@ class DecoderCNN(nn.Module):
         #  output should be a batch of images, with same dimensions as the
         #  inputs to the Encoder were.
         # ====== YOUR CODE: ======
-        n_layers = 3
+        n_layers = 4
         # dropout = 0.2
-        kernel_sizes = [3,3,3]
-        strides = [2,2,2]
-        paddings = [1,1,1]
-        output_paddings = [1,1,1]
-
-        inner_channels = [out_channels] + [32*8**i for i in range(n_layers - 1)] + [in_channels]
+        kernel_sizes = [4,4,4,4]
+        strides = [2,2,2,2]
+        paddings = [1,1,1,1]
+        output_paddings = [0,0,0,0]
+        inner_channels = [out_channels] + [32*4**i for i in range(n_layers - 1)] + [in_channels]
         inner_channels.reverse()
+
+        bn = [nn.BatchNorm2d(inner_channels[i+1]) for i in range(n_layers - 1)] + [nn.Identity()]
+        activations =  [nn.LeakyReLU(0.2)]*(n_layers - 1) + [nn.Identity()]
         for i in range(n_layers):
             modules += [nn.ConvTranspose2d(inner_channels[i], inner_channels[i+1], kernel_sizes[i], strides[i], paddings[i], output_paddings[i], bias=True),
-                       nn.Dropout2d(dropout) ,nn.BatchNorm2d(inner_channels[i+1]), nn.LeakyReLU(0.2) ]
+                       bn[i], activations[i]]
         # another convolution at the end for the outer zero padding to not matter so much and for the final move not to be
         # relu
-        modules += [nn.Conv2d(out_channels, out_channels, 3, padding =1)]
+        # modules += [nn.Conv2d(out_channels, out_channels, 3, padding =1)]
         # ========================
         
         self.cnn = nn.Sequential(*modules)
@@ -113,7 +118,7 @@ class VAE(nn.Module):
 
         self.fc_decoder = nn.Linear(z_dim, n_features)
         # ========================
-
+    
     def _check_features(self, in_size):
         device = next(self.parameters()).device
         with torch.no_grad():
