@@ -32,11 +32,26 @@ class EncoderCNN(nn.Module):
         n_layers = 4
         # dropout = 0.2
 
-        kernel_sizes = [3,3,3,3]   
-        paddings = [1,1,1,1]
+        # kernel_sizes = [3,3,3,3]   
+        # paddings = [1,1,1,1]
+        # strides = [2,2,2,2]
+
+        # inner_channels = [in_channels] + [32*4**i for i in range(n_layers - 1)] + [out_channels]
+        # bn = [nn.BatchNorm2d(inner_channels[i+1]) for i in range(n_layers)]
+        # activations = [nn.LeakyReLU(0.2)]*n_layers
+        # # the sizes are: 64 -> 32 -> 16 -> 8 -> 4, this setup shinks by 2 each time
+        # for i in range(n_layers):
+        #     #TODO: do we need to put batchnorm and dropout in the final layer?
+            
+        #     modules += [nn.Conv2d(inner_channels[i], inner_channels[i+1], kernel_sizes[i], strides[i], paddings[i], bias=True),
+        #                 bn[i], activations[i]]
+
+
+        kernel_sizes = [5,5,5,5]   
+        paddings = [1,1,1,2]
         strides = [2,2,2,2]
 
-        inner_channels = [in_channels] + [32*4**i for i in range(n_layers - 1)] + [out_channels]
+        inner_channels = [in_channels] + [128, 256, 512] + [out_channels]
         bn = [nn.BatchNorm2d(inner_channels[i+1]) for i in range(n_layers)]
         activations = [nn.LeakyReLU(0.2)]*n_layers
         # the sizes are: 64 -> 32 -> 16 -> 8 -> 4, this setup shinks by 2 each time
@@ -70,15 +85,21 @@ class DecoderCNN(nn.Module):
         # ====== YOUR CODE: ======
         n_layers = 4
         # dropout = 0.2
-        kernel_sizes = [4,4,4,4]
+        # kernel_sizes = [4,4,4,4]
+        # strides = [2,2,2,2]
+        # paddings = [1,1,1,1]
+        # output_paddings = [0,0,0,0]
+        # inner_channels = [out_channels] + [32*4**i for i in range(n_layers - 1)] + [in_channels]
+        # inner_channels.reverse()
+
+        kernel_sizes = [5,5,5,5]
         strides = [2,2,2,2]
-        paddings = [1,1,1,1]
-        output_paddings = [0,0,0,0]
-        inner_channels = [out_channels] + [32*4**i for i in range(n_layers - 1)] + [in_channels]
-        inner_channels.reverse()
+        paddings = [1,2,2,3]
+        output_paddings = [0,0,0,1]
+        inner_channels = [in_channels] + [512, 256, 128] + [out_channels]
 
         bn = [nn.BatchNorm2d(inner_channels[i+1]) for i in range(n_layers - 1)] + [nn.Identity()]
-        activations =  [nn.LeakyReLU(0.2)]*(n_layers - 1) + [nn.Identity()]
+        activations =  [nn.ReLU()]*(n_layers - 1) + [nn.Identity()]
         for i in range(n_layers):
             modules += [nn.ConvTranspose2d(inner_channels[i], inner_channels[i+1], kernel_sizes[i], strides[i], paddings[i], output_paddings[i], bias=True),
                        bn[i], activations[i]]
