@@ -44,12 +44,14 @@ class Discriminator(nn.Module):
         self.apply(self._init_weights)
         # ========================
     
+    # DAN: init weights according to DCGAN method
     def _init_weights(self, module):
-        """ from DCGAN paper: Initialize the weights of a module with"""
+        """ from DCGAN paper: Initialize the weights of a module with N(0,0.02)"""
         if isinstance(module, nn.Conv2d):    
             module.weight.data.normal_(mean=0.0, std=0.02)
         if isinstance(module, nn.Linear):    
             module.weight.data.normal_(mean=0.0, std=0.02)
+    # DAN
 
     def forward(self, x):
         """
@@ -93,7 +95,7 @@ class Generator(nn.Module):
         inner_channels = [in_channels] + [512, 256, 128] + [out_channels]
 
         bn = [nn.BatchNorm2d(inner_channels[i+1]) for i in range(n_layers - 1)] + [nn.Identity()]
-        activations =  [nn.ReLU()]*(n_layers - 1) + [nn.Identity()]
+        activations =  [nn.LeakyReLU(0.05)]*(n_layers - 1) + [nn.Identity()]
         for i in range(n_layers):
             modules += [nn.ConvTranspose2d(inner_channels[i], inner_channels[i+1], kernel_sizes[i], strides[i], paddings[i], output_paddings[i], bias=True),
                        bn[i], activations[i]]
@@ -174,13 +176,21 @@ def discriminator_loss_fn(y_data, y_generated, data_label=0, label_noise=0.0):
     #  Implement the discriminator loss. Apply noise to both the real data and the
     #  generated labels. 
     #  See pytorch's BCEWithLogitsLoss for a numerically stable implementation.
-    # so 
     # ====== YOUR CODE: ======
-    # this implementation is weird
     data_labels = torch.ones_like(y_data) * data_label + (torch.rand_like(y_data) - 0.5)* label_noise
     generated_labels = torch.ones_like(y_generated) * (1 - data_label) + (torch.rand_like(y_generated) - 0.5)*label_noise
-    loss_data = nn.BCEWithLogitsLoss()(y_data, data_labels)
-    loss_generated = nn.BCEWithLogitsLoss()(y_generated, generated_labels)
+    
+    # flip labels randomly
+    # ====VVVVV
+    data_labels_flipped = data_labels - (torch.rand_like(y_data) > 1).float()
+    generated_labels_flipped = generated_labels - (torch.rand_like(y_generated) > 1).float()
+    # ====^^^^^  
+
+    # minibatch discrimination
+
+
+    loss_data = nn.BCEWithLogitsLoss()(y_data, data_labels_flipped)
+    loss_generated = nn.BCEWithLogitsLoss()(y_generated, generated_labels_flipped)
     # ========================
     return loss_data + loss_generated
 
@@ -233,16 +243,34 @@ def train_batch(
     #  2. Calculate discriminator loss
     #  3. Update discriminator parameters
     # ====== YOUR CODE: ======
-    n = x_data.shape[0]
+
+    # DISCRIMINATOR
+    # 1. noise up the inputs
+
+
     dsc_model.zero_grad()
-
-    # use same fake samples for both? why and why not?
-
-
+    n = x_data.shape[0]
+    # create fake samples
     fake_samples = gen_model.sample(n, with_grad=False)
-    dsc_real_scores = dsc_model(x_data)
-    dsc_fake_scores = dsc_model(fake_samples)
-    print(f'\n{dsc_real_scores.item()=}, {dsc_fake_scores.item()=}')
+    
+    # add noise and average the images
+    # VVVVVVVVVVVVVV====================
+    epsilons = torch.tensor([0, 0.0001])
+    noise_real = torch.randn([len(epsilons), *x_data.shape])*epsilons[:, None, None, None, None]
+    noise_fake = torch.randn([len(epsilons), *fake_samples.shape])*epsilons[:, None, None, None, None]
+
+    x_data_noise = x_data + noise_real
+    x_data_noise = x_data_noise.view(n*len(epsilons), *x_data.shape[1:])
+    fake_samples_noise = fake_samples + noise_fake
+    fake_samples_noise = fake_samples_noise.view(n*len(epsilons), *x_data.shape[1:])
+    # TODO: maybe this isn't the best way to go about it since the discriminator now accepts more inputs
+    #       than generator. could randomly pick one instead of concatenating
+    # ================^^^^^^^^^^^^^^
+
+    dsc_real_scores = dsc_model(x_data_noise)
+    dsc_fake_scores = dsc_model(fake_samples_noise)
+    # print(f'\n{dsc_real_scores.item()=}, {dsc_fake_scores.item()=}')
+
     dsc_loss = dsc_loss_fn(dsc_real_scores, dsc_fake_scores)
     dsc_loss.backward()
     dsc_optimizer.step()
@@ -283,7 +311,8 @@ def save_checkpoint(gen_model, dsc_losses, gen_losses, checkpoint_file):
     #  If you save, set saved to True.
     # ====== YOUR CODE: ======
 
-    raise NotImplementedError()
+    last_losses = dsc_losses[-10:]
+    
     # ========================
 
     return saved

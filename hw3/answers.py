@@ -195,9 +195,9 @@ PART3_CUSTOM_DATA_URL = None
 def part3_gan_hyperparams():
     hypers = dict(
         batch_size=64,
-        z_dim=100,
+        z_dim=30,
         data_label=1,
-        label_noise=0.2,
+        label_noise=0.3,
         discriminator_optimizer=dict(
             type="Adam",  # Any name in nn.optim like SGD, Adam
             lr=0.0002,
