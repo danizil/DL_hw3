@@ -51,7 +51,7 @@ class EncoderCNN(nn.Module):
         paddings = [1,1,1,2]
         strides = [2,2,2,2]
 
-        inner_channels = [in_channels] + [128, 256, 512] + [out_channels]
+        inner_channels = [in_channels] + [256, 512, 1024] + [out_channels]
         bn = [nn.BatchNorm2d(inner_channels[i+1]) for i in range(n_layers)]
         activations = [nn.LeakyReLU(0.2)]*n_layers
         # the sizes are: 64 -> 32 -> 16 -> 8 -> 4, this setup shinks by 2 each time
@@ -96,16 +96,16 @@ class DecoderCNN(nn.Module):
         strides = [2,2,2,2]
         paddings = [1,2,2,3]
         output_paddings = [0,0,0,1]
-        inner_channels = [in_channels] + [512, 256, 128] + [out_channels]
+        inner_channels = [in_channels] + [1024, 512, 256] + [out_channels]
 
         bn = [nn.BatchNorm2d(inner_channels[i+1]) for i in range(n_layers - 1)] + [nn.Identity()]
-        activations =  [nn.ReLU()]*(n_layers - 1) + [nn.Identity()]
+        activations =  [nn.LeakyReLU(0.05)]*(n_layers - 1) + [nn.Identity()]
         for i in range(n_layers):
             modules += [nn.ConvTranspose2d(inner_channels[i], inner_channels[i+1], kernel_sizes[i], strides[i], paddings[i], output_paddings[i], bias=True),
                        bn[i], activations[i]]
         # another convolution at the end for the outer zero padding to not matter so much and for the final move not to be
         # relu
-        # modules += [nn.Conv2d(out_channels, out_channels, 3, padding =1)]
+        modules += [nn.Conv2d(out_channels, out_channels, 3, padding =1)]
         # ========================
         
         self.cnn = nn.Sequential(*modules)
