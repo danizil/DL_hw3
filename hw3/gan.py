@@ -243,6 +243,8 @@ def train_batch(
     #  2. Calculate discriminator loss
     #  3. Update discriminator parameters
     # ====== YOUR CODE: ======
+    
+
 
     # DISCRIMINATOR
     # 1. noise up the inputs
@@ -255,7 +257,7 @@ def train_batch(
     
     # add noise and average the images
     # VVVVVVVVVVVVVV====================
-    epsilons = torch.tensor([0, 0.0001])
+    epsilons = torch.tensor([0, 1, 0.1])
     noise_real = torch.randn([len(epsilons), *x_data.shape])*epsilons[:, None, None, None, None]
     noise_fake = torch.randn([len(epsilons), *fake_samples.shape])*epsilons[:, None, None, None, None]
 
@@ -269,7 +271,7 @@ def train_batch(
 
     dsc_real_scores = dsc_model(x_data_noise)
     dsc_fake_scores = dsc_model(fake_samples_noise)
-    # print(f'\n{dsc_real_scores.item()=}, {dsc_fake_scores.item()=}')
+
 
     dsc_loss = dsc_loss_fn(dsc_real_scores, dsc_fake_scores)
     dsc_loss.backward()
@@ -283,14 +285,22 @@ def train_batch(
     # ====== YOUR CODE: ======
     gen_model.zero_grad()
     
-    fake_samples = gen_model.sample(n, with_grad=True)
-    dsc_fake_scores = dsc_model(fake_samples)
-    gen_loss = gen_loss_fn(dsc_fake_scores)
+    fake_samples_gen = gen_model.sample(n, with_grad=True)
+    fake_scores_gen = dsc_model(fake_samples_gen)
+    gen_loss = gen_loss_fn(fake_scores_gen)
+
+
+
+    # additional metrics VVVVV
+    dsc_fake_classification = F.sigmoid(dsc_fake_scores).mean().item()
+    dsc_real_classification = F.sigmoid(dsc_real_scores).mean().item()
+    gen_classification = F.sigmoid(fake_scores_gen).mean().item()
+
     gen_loss.backward()
     gen_optimizer.step()
     # ========================
 
-    return dsc_loss.item(), gen_loss.item()
+    return dsc_loss.item(), gen_loss.item() , dsc_fake_classification, dsc_real_classification, gen_classification
 
 
 def save_checkpoint(gen_model, dsc_losses, gen_losses, checkpoint_file):
