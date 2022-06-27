@@ -292,9 +292,9 @@ def train_batch(
 
 
     # additional metrics VVVVV
-    dsc_fake_classification = F.sigmoid(dsc_fake_scores).mean().item()
-    dsc_real_classification = F.sigmoid(dsc_real_scores).mean().item()
-    gen_classification = F.sigmoid(fake_scores_gen).mean().item()
+    dsc_fake_classification = torch.sigmoid(dsc_fake_scores).mean().item()
+    dsc_real_classification = torch.sigmoid(dsc_real_scores).mean().item()
+    gen_classification = torch.sigmoid(fake_scores_gen).mean().item()
 
     gen_loss.backward()
     gen_optimizer.step()
