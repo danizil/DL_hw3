@@ -136,7 +136,7 @@ class Trainer(abc.ABC):
         as a relative path).
         :param checkpoint_filename: File name or relative path to save to.
         """
-        dirname = os.path.dirname(checkpoint_filename) or "."
+        dirname = os.path.dirname(checkpoint_filename) or "." 
         os.makedirs(dirname, exist_ok=True)
         torch.save({"model_state": self.model.state_dict()}, checkpoint_filename + ".pt")
         print(f"\n*** Saved checkpoint {checkpoint_filename}" + ".pt")

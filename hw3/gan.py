@@ -222,7 +222,6 @@ def generator_loss_fn(y_generated, data_label=0):
     # ========================
     return loss
 
-
 def train_batch(
     dsc_model: Discriminator,
     gen_model: Generator,
@@ -244,7 +243,7 @@ def train_batch(
     #  3. Update discriminator parameters
     # ====== YOUR CODE: ======
     
-
+    device = x_data.device
 
     # DISCRIMINATOR
     # 1. noise up the inputs
@@ -257,9 +256,9 @@ def train_batch(
     
     # add noise and average the images
     # VVVVVVVVVVVVVV====================
-    epsilons = torch.tensor([0, 1, 0.1])
-    noise_real = torch.randn([len(epsilons), *x_data.shape])*epsilons[:, None, None, None, None]
-    noise_fake = torch.randn([len(epsilons), *fake_samples.shape])*epsilons[:, None, None, None, None]
+    epsilons = torch.tensor([0, 1, 0.1], device=device)
+    noise_real = torch.randn([len(epsilons), *x_data.shape], device=device)*epsilons[:, None, None, None, None]
+    noise_fake = torch.randn([len(epsilons), *fake_samples.shape], device=device)*epsilons[:, None, None, None, None]
 
     x_data_noise = x_data + noise_real
     x_data_noise = x_data_noise.view(n*len(epsilons), *x_data.shape[1:])
@@ -272,7 +271,7 @@ def train_batch(
     dsc_real_scores = dsc_model(x_data_noise)
     dsc_fake_scores = dsc_model(fake_samples_noise)
 
-
+    # need to normalize by the number of samples? seems like it only adds a constant because of the logs...
     dsc_loss = dsc_loss_fn(dsc_real_scores, dsc_fake_scores)
     dsc_loss.backward()
     dsc_optimizer.step()
@@ -320,9 +319,51 @@ def save_checkpoint(gen_model, dsc_losses, gen_losses, checkpoint_file):
     #  You should decide what logic to use for deciding when to save.
     #  If you save, set saved to True.
     # ====== YOUR CODE: ======
+    # method: 1. see if both series are decreasing over the epoch.
+    #         2. we can also save only for situations where gen is decreasing and is decreasing more than the discriminator
+    from scipy import stats
+    import os
+    import numpy as np
 
-    last_losses = dsc_losses[-10:]
+    p_val_thresh = 0.2
+    xs = np.arange(range(dsc_losses))
+    slope_dsc, _, _, p_value_dsc, std_err = stats.linregress(xs, dsc_losses)
+    slope_gen, _, _, p_value_gen, std_err = stats.linregress(xs, gen_losses)
+
+    if slope_dsc < 0.2 and slope_gen < 0.2:
+        if p_value_dsc < 0.2 and p_value_gen < 0.2:
+            # slope_diff = slope_gen - slope_dsc
+            # if slope_diff < 0:
+            dirname = os.path.dirname(checkpoint_file) or "." 
+            os.makedirs(dirname, exist_ok=True)
+            torch.save({"model_state": gen_model.state_dict()}, checkpoint_file + ".pt")
+            saved = True
+    # ========================
+
+    return saved
+
+
+def save_checkpoint_manually(gen_model, dsc_model, checkpoint_file):
+    """
+    Saves a checkpoint of the generator, if necessary.
+    :param gen_model: The Generator model to save.
+    :param dsc_losses: Avg. discriminator loss per epoch.
+    :param gen_losses: Avg. generator loss per epoch.
+    :param checkpoint_file: Path without extension to save generator to.
+    """
+
+    saved = False
+    checkpoint_file = f"{checkpoint_file}.pt"
+
+    import os
+
+    dirname = os.path.dirname(checkpoint_file) or "." 
+    os.makedirs(dirname, exist_ok=True)
+    torch.save({"model_state": gen_model.state_dict()}, checkpoint_file + "_manual_gen.pt")
+    torch.save({"model_state": dsc_model.state_dict()}, checkpoint_file + "_manual_dsc.pt")
+    print(f"\n*** Saved checkpoint {checkpoint_file}")
     
+    saved=True
     # ========================
 
     return saved
