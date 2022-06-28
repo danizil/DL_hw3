@@ -326,12 +326,16 @@ def save_checkpoint(gen_model, dsc_losses, gen_losses, checkpoint_file):
     import numpy as np
 
     p_val_thresh = 0.2
-    xs = np.arange(range(dsc_losses))
+    xs = np.arange(len(dsc_losses))
+    
+    if len(xs) == 1:
+        return False
+
     slope_dsc, _, _, p_value_dsc, std_err = stats.linregress(xs, dsc_losses)
     slope_gen, _, _, p_value_gen, std_err = stats.linregress(xs, gen_losses)
 
-    if slope_dsc < 0.2 and slope_gen < 0.2:
-        if p_value_dsc < 0.2 and p_value_gen < 0.2:
+    if slope_dsc < 0 and slope_gen < 0:
+        if p_value_dsc < p_val_thresh and p_value_gen < p_val_thresh:
             # slope_diff = slope_gen - slope_dsc
             # if slope_diff < 0:
             dirname = os.path.dirname(checkpoint_file) or "." 
