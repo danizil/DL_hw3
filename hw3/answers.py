@@ -198,17 +198,16 @@ An equation: $e^{i\pi} -1 = 0$
 
 PART3_CUSTOM_DATA_URL = None
 
-
 def part3_gan_hyperparams():
     hypers = dict(
         batch_size=64,
-        z_dim=30,
+        z_dim=50,
         data_label=1,
-        label_noise=0.3,
+        label_noise=0.2,
         discriminator_optimizer=dict(
             type="Adam",  # Any name in nn.optim like SGD, Adam
             lr=0.0002,
-            betas=(0.5, 0.99),
+            betas=(0.3, 0.7),
             # momentum=0.9,
             # You an add extra args for the optimizer here
         ),

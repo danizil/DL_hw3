@@ -256,7 +256,7 @@ def train_batch(
     
     # add noise and average the images
     # VVVVVVVVVVVVVV====================
-    epsilons = torch.tensor([0, 1, 0.1], device=device)
+    epsilons = torch.tensor([0, 0.01, 0.001], device=device)
     noise_real = torch.randn([len(epsilons), *x_data.shape], device=device)*epsilons[:, None, None, None, None]
     noise_fake = torch.randn([len(epsilons), *fake_samples.shape], device=device)*epsilons[:, None, None, None, None]
 
@@ -320,7 +320,9 @@ def save_checkpoint(gen_model, dsc_losses, gen_losses, checkpoint_file):
     #  If you save, set saved to True.
     # ====== YOUR CODE: ======
     # method: 1. see if both series are decreasing over the epoch.
-    #         2. we can also save only for situations where gen is decreasing and is decreasing more than the discriminator
+    #         2. we can also save only for situations where gen is decreasing and is decreasing more than the discriminator 
+    #            by adding the slopes together but gen's loss is different and we have no way of comparing... if we had 
+    #            log(1-G(z)) instead of log(G(z))...
     from scipy import stats
     import os
     import numpy as np
