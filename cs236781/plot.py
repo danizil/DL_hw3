@@ -24,7 +24,22 @@ def tensor_as_image(tensor, figsize=(8, 8), cmap=None):
     
     return fig, ax
 
+def plot_losses_n_game_stats(dsc_loss, gen_loss, mean_class_gen, mean_class_gen_dsc, mean_class_real_dsc):
+    fig, axes = plt.subplots(2)
+    axes_flat = axes.reshape(-1) 
+    axes_flat[0].plot(dsc_loss, label='Discriminator Loss')
+    axes_flat[0].plot(gen_loss, label='Generator Loss')
+    # axes_flat[0].axis('off')
 
+
+    axes_flat[1].plot(mean_class_gen, label='gen_in_gen')
+    axes_flat[1].plot(mean_class_gen_dsc, label='gen_in_dsc')
+    axes_flat[1].plot(mean_class_real_dsc, label='real_in_dsc')
+    axes_flat[1].axis('off')
+    
+    # plt.show()
+    
+    return fig, axes
 
 def tensors_as_images(
     tensors, nrows=1, figsize=(8, 8), titles=[], wspace=0.1, hspace=0.2, cmap=None

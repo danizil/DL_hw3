@@ -182,15 +182,15 @@ def discriminator_loss_fn(y_data, y_generated, data_label=0, label_noise=0.0):
     
     # flip labels randomly
     # ====VVVVV
-    data_labels_flipped = data_labels - (torch.rand_like(y_data) > 1).float()
-    generated_labels_flipped = generated_labels - (torch.rand_like(y_generated) > 1).float()
+    data_labels = data_labels - (torch.rand_like(y_data) > 1).float()
+    generated_labels = generated_labels - (torch.rand_like(y_generated) > 1).float()
     # ====^^^^^  
 
     # minibatch discrimination
 
 
-    loss_data = nn.BCEWithLogitsLoss()(y_data, data_labels_flipped)
-    loss_generated = nn.BCEWithLogitsLoss()(y_generated, generated_labels_flipped)
+    loss_data = nn.BCEWithLogitsLoss()(y_data, data_labels)
+    loss_generated = nn.BCEWithLogitsLoss()(y_generated, generated_labels)
     # ========================
     return loss_data + loss_generated
 
@@ -342,7 +342,7 @@ def save_checkpoint(gen_model, dsc_losses, gen_losses, checkpoint_file):
             # if slope_diff < 0:
             dirname = os.path.dirname(checkpoint_file) or "." 
             os.makedirs(dirname, exist_ok=True)
-            torch.save({"model_state": gen_model.state_dict()}, checkpoint_file + ".pt")
+            torch.save({"model_state": gen_model.state_dict()}, checkpoint_file)
             saved = True
     # ========================
 
